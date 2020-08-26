@@ -17,6 +17,14 @@
       "odlId": {
         "type": "string"
       },
+      "hostPoolName": {
+        "type": "string",
+        "defaultValue": "LabVMs-HostPool"
+      },
+      "hostpoolToken": {
+        "type": "string",
+        "defaultValue": "eyJhbGciOiJSUzI1NiIsImtpZCI6Ijc4MkNGNDc0MzUwRkU3MkY5M0E2NzczOEFBRjQ0Qzg4QkFFMjI0QUIiLCJ0eXAiOiJKV1QifQ.eyJSZWdpc3RyYXRpb25JZCI6IjRmMjEzMTUyLTE0ZjctNDUxMC1hMDVjLTVhNjM3NmE0MGYxNyIsIkJyb2tlclVyaSI6Imh0dHBzOi8vcmRicm9rZXItZy11cy1yMC53dmQubWljcm9zb2Z0LmNvbS8iLCJEaWFnbm9zdGljc1VyaSI6Imh0dHBzOi8vcmRkaWFnbm9zdGljcy1nLXVzLXIwLnd2ZC5taWNyb3NvZnQuY29tLyIsIkVuZHBvaW50UG9vbElkIjoiOWJiNGUyYzktMDI2Ni00NDQwLWI2MjctNmE4NWY1NTc1MDQzIiwiR2xvYmFsQnJva2VyVXJpIjoiaHR0cHM6Ly9yZGJyb2tlci53dmQubWljcm9zb2Z0LmNvbS8iLCJHZW9ncmFwaHkiOiJVUyIsIm5iZiI6MTU5ODI2OTIyMiwiZXhwIjoxNjAwNTQwMjAwLCJpc3MiOiJSREluZnJhVG9rZW5NYW5hZ2VyIiwiYXVkIjoiUkRtaSJ9.eRZ5GKhgaHvrOH2MLqA7ozC4wr6HOOrznIQyXV4bMoHyfTfa5NsrS7vKW_KVhZEjVAUQtJWSrbli7kgXfI4nfkZkJplqDTJAG9Uns0dYySLiUVTq0G5TPqhmx6R9hUVNjLAXZ3yKHWhuGc4Xcxr-ccUnNzkxf0U3BM1CjhdCJu5YekYg8Dzdu59KXfmida3XhZOFOxxd2falJUKy5ho9FB9Kf-oRTvgX964F1xLYWpO0Irjo9piaGcC-tbkGAwpFoxPmxjnSCIA8pilbW8bRmTXvkR-ckKdldGReAr79jvZhxNFuGX8BU6y3hK7sL2rQSjMa9Qi8xhSNQpM2V5X61Q"
+      },
       "deploymentId": {
         "type": "string"
       }
@@ -36,6 +44,7 @@
       "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets/',variables('virtualNetworkName'), variables('subnetName'))]",
       "virtualMachineSize": "Standard_D2s_v3",
       "virtualNetworkName": "labvm-vnet",
+      "dscname":  "dscextension",
       "vmName": "[concat('labvm-',parameters('deploymentId'))]",
       "adlsStorageAccountName": "[concat('asadatalake', parameters('deploymentId'))]",
       "location": "[resourceGroup().location]"
@@ -173,7 +182,7 @@
             ]
           }
         },
-        "resources": [
+         "resources": [
           {
             "type": "Microsoft.Compute/virtualMachines/extensions",
             "name": "[concat(variables('vmName'),'/', 'winExtension')]",
@@ -200,7 +209,30 @@
                 "commandToExecute": "[concat('powershell.exe -ExecutionPolicy Unrestricted -File post-install-script01.ps1', variables('postInstallParameters'))]"
               }
             }
+          },
+          {
+          "type": "Microsoft.Compute/virtualMachines/extensions",
+          "name": "[concat(variables('vmName'), '/', 'dscextension')]",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[concat('Microsoft.Compute/virtualMachines/', variables('vmName') , '/extensions/', variables('dscname'))]",
+            "[concat('Microsoft.Compute/virtualMachines/', variables('vmName'))]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Powershell",
+            "type": "DSC",
+            "typeHandlerVersion": "2.73",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "modulesUrl": "https://wvdportalstorageblob.blob.core.windows.net/galleryartifacts/Configuration.zip",
+              "configurationFunction": "Configuration.ps1\\AddSessionHost",
+              "properties": {
+                "hostPoolName": "[parameters('hostPoolName')]",
+                "registrationInfoToken": "[parameters('hostpoolToken')]"
+              }
+            }
           }
+        }
         ]
       }
     ],
