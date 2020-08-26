@@ -193,8 +193,9 @@
               "displayName": "VM Extension"
             },
             "dependsOn": [
-              "[concat('Microsoft.Compute/virtualMachines/', variables('vmName'))]"
-            ],
+                "[concat('Microsoft.Compute/virtualMachines/', variables('vmName') , '/extensions/', variables('dscname'))]",
+                "[concat('Microsoft.Compute/virtualMachines/', variables('vmName'))]"
+              ],
             "properties": {
               "publisher": "Microsoft.Compute",
               "type": "CustomScriptExtension",
@@ -211,11 +212,11 @@
             }
           },
           {
+		"apiVersion": "2018-10-01",	  
           "type": "Microsoft.Compute/virtualMachines/extensions",
           "name": "[concat(variables('vmName'), '/', 'dscextension')]",
           "location": "[resourceGroup().location]",
           "dependsOn": [
-            "[concat('Microsoft.Compute/virtualMachines/', variables('vmName') , '/extensions/', variables('dscname'))]",
             "[concat('Microsoft.Compute/virtualMachines/', variables('vmName'))]"
           ],
           "properties": {
